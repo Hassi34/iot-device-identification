@@ -1,5 +1,0 @@
-*
-!model_serving/src
-!model_serving/requirements.txt 
-!model_serving/setup.py 
-!model_serving/README.md

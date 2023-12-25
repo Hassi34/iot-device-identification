@@ -1,9 +1,0 @@
-model_serving:
-  PRODUCTION_MODEL_FILE_PATH : src/artifacts/production_model/model.onnx
-  DATA_PREPROCESSOR_FILE_PATH : src/artifacts/pipelines/data_preprocessing_pipeline.pkl
-  APP_HOST : 0.0.0.0
-  APP_PORT : 8080
-  API_TITLE: IoT device identification service
-  API_DESCRIPTION: This is an online reatime service for IOT device identification connecting to a network
-  API_VERSION: 0.0.1
-  
