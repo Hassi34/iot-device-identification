@@ -1,14 +1,13 @@
 trigger:
 - master
-- devops-setup
+- main
 
 resources:
 - repo: self
 
 variables:
-  # - group: iot-training-variables
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: '53d5df7f-2a51-4fd4-85cb-0b14ab934258'
+  dockerRegistryServiceConnection: '53d5af7f-7a51-4fd2-85ab-0b14aw934248' # provided a dummy string here
   imageRepository: 'iotdeviceidentification'
   containerRegistry: 'devopspublic.azurecr.io'
   dockerfilePath: '**/Dockerfile'
