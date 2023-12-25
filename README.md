@@ -100,7 +100,7 @@ The significance of creating the ONNX format for the model is that it allows the
 
 ```bash
 conda create -p venv python=3.11
-conda activate venv 
+conda activate ./venv 
 ```
 OR
 * Create a new Python virtual environment with pip:
