@@ -1,0 +1,157 @@
+schema: '2.0'
+stages:
+  IngestData:
+    cmd: python src/stage_01_ingest_data.py --config=configs/system.yaml
+    deps:
+    - path: configs/
+      hash: md5
+      md5: 26002478f82789727952bbfde476d91f.dir
+      size: 8722
+      nfiles: 2
+    - path: src/stage_01_ingest_data.py
+      hash: md5
+      md5: 8b644966d8b0a10e6df7e45f2229e752
+      size: 2966
+    - path: src/utils/
+      hash: md5
+      md5: fb13144a014db6a78522007f8acacd33.dir
+      size: 59130
+      nfiles: 17
+    outs:
+    - path: dataset/raw
+      hash: md5
+      md5: f8b96d460ef8ac81b3ae95ba3455657b.dir
+      size: 544762
+      nfiles: 2
+  DataDrift:
+    cmd: python src/stage_02_data_drift.py --config=configs/system.yaml --params=configs/params.yaml
+    deps:
+    - path: configs/
+      hash: md5
+      md5: 5f49ce3bec4aec7ddcfb63b375b9e3b2.dir
+      size: 8661
+      nfiles: 2
+    - path: dataset/raw
+      hash: md5
+      md5: d6e3e00ed0dff4e43cf11214d384a535.dir
+      size: 542960
+      nfiles: 2
+    - path: src/stage_02_data_drift.py
+      hash: md5
+      md5: b98e6f189a01c1f3fd8ae415f84df0fa
+      size: 3720
+    - path: src/utils/
+      hash: md5
+      md5: d9c3485dae61eb427fd61dd147b22b46.dir
+      size: 59121
+      nfiles: 17
+    outs:
+    - path: artifacts/model_monitoring
+      hash: md5
+      md5: 1cf3bc8c401f7a82d6a6787439971bb0.dir
+      size: 456929
+      nfiles: 2
+  Preprocess Data:
+    cmd: python src/stage_03_preprocess_data.py --config=configs/system.yaml --params=configs/params.yaml
+    deps:
+    - path: artifacts/model_monitoring
+      hash: md5
+      md5: 1cf3bc8c401f7a82d6a6787439971bb0.dir
+      size: 456929
+      nfiles: 2
+    - path: configs/
+      hash: md5
+      md5: 5f49ce3bec4aec7ddcfb63b375b9e3b2.dir
+      size: 8661
+      nfiles: 2
+    - path: dataset/raw
+      hash: md5
+      md5: d6e3e00ed0dff4e43cf11214d384a535.dir
+      size: 542960
+      nfiles: 2
+    - path: src/stage_03_preprocess_data.py
+      hash: md5
+      md5: 3e232d360d84319cac63b458e60a7422
+      size: 5062
+    - path: src/utils/
+      hash: md5
+      md5: d9c3485dae61eb427fd61dd147b22b46.dir
+      size: 59121
+      nfiles: 17
+    outs:
+    - path: artifacts/pipelines
+      hash: md5
+      md5: 0a2166dcf1dd830fbe77522e7e2f7205.dir
+      size: 39940
+      nfiles: 1
+    - path: dataset/preprocessed
+      hash: md5
+      md5: 633d4d423e23cc153dd6297e4fdff6ca.dir
+      size: 40193
+      nfiles: 4
+  ModelTraining&Evaluation:
+    cmd: python src/stage_04_training_and_eval.py --config=configs/system.yaml --params=configs/params.yaml
+    deps:
+    - path: configs/
+      hash: md5
+      md5: 5f49ce3bec4aec7ddcfb63b375b9e3b2.dir
+      size: 8661
+      nfiles: 2
+    - path: dataset/preprocessed
+      hash: md5
+      md5: 633d4d423e23cc153dd6297e4fdff6ca.dir
+      size: 40193
+      nfiles: 4
+    - path: src/stage_04_training_and_eval.py
+      hash: md5
+      md5: 17b73dc813fc12c4c131afbbc083eca1
+      size: 11169
+    - path: src/utils/
+      hash: md5
+      md5: d9c3485dae61eb427fd61dd147b22b46.dir
+      size: 59121
+      nfiles: 17
+    outs:
+    - path: artifacts/model_evaluation
+      hash: md5
+      md5: c1e1fedacd0da11607e955f23b89c647.dir
+      size: 26632
+      nfiles: 1
+    - path: artifacts/models/trained
+      hash: md5
+      md5: 0c220b11cce874962d6e72d59832656f.dir
+      size: 855456
+      nfiles: 1
+  ModelBlessing:
+    cmd: python src/stage_05_model_blessing.py --config=configs/system.yaml --params=configs/params.yaml
+    deps:
+    - path: artifacts/models/trained
+      hash: md5
+      md5: 0c220b11cce874962d6e72d59832656f.dir
+      size: 855456
+      nfiles: 1
+    - path: configs/
+      hash: md5
+      md5: 5f49ce3bec4aec7ddcfb63b375b9e3b2.dir
+      size: 8661
+      nfiles: 2
+    - path: src/stage_05_model_blessing.py
+      hash: md5
+      md5: 52538dd1833f0e4ed6d6eab03ca668d6
+      size: 5951
+    - path: src/utils/
+      hash: md5
+      md5: d9c3485dae61eb427fd61dd147b22b46.dir
+      size: 59121
+      nfiles: 17
+    outs:
+    - path: artifacts/models/production
+      hash: md5
+      md5: 07c0756f75e6552cadc94b86eca23806.dir
+      size: 849778
+      nfiles: 7
+    - path: artifacts/models/staging
+      hash: md5
+      md5: 07c0756f75e6552cadc94b86eca23806.dir
+      size: 849778
+      nfiles: 7

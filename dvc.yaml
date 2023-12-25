@@ -1,0 +1,59 @@
+# add stages here 
+stages:
+  IngestData:
+    cmd: python src/stage_01_ingest_data.py --config=configs/system.yaml
+    deps:
+    - src/stage_01_ingest_data.py
+    - src/utils/
+    - configs/
+    
+    outs:
+    - dataset/raw
+
+  DataDrift:
+    cmd: python src/stage_02_data_drift.py --config=configs/system.yaml --params=configs/params.yaml
+    deps:
+    - src/stage_02_data_drift.py
+    - configs/
+    - src/utils/
+    - dataset/raw
+    
+    outs:
+    - artifacts/model_monitoring
+
+  Preprocess Data:
+    cmd: python src/stage_03_preprocess_data.py --config=configs/system.yaml --params=configs/params.yaml
+    deps:
+    - src/stage_03_preprocess_data.py
+    - src/utils/
+    - configs/
+    - artifacts/model_monitoring
+    - dataset/raw
+    
+    outs:
+    - dataset/preprocessed
+    - artifacts/pipelines
+
+  ModelTraining&Evaluation:
+    cmd: python src/stage_04_training_and_eval.py --config=configs/system.yaml --params=configs/params.yaml
+    deps:
+    - src/stage_04_training_and_eval.py
+    - src/utils/
+    - configs/
+    - dataset/preprocessed
+    
+    outs:
+    - artifacts/model_evaluation
+    - artifacts/models/trained
+
+  ModelBlessing:
+    cmd: python src/stage_05_model_blessing.py --config=configs/system.yaml --params=configs/params.yaml
+    deps:
+    - src/stage_05_model_blessing.py
+    - src/utils/
+    - configs/
+    - artifacts/models/trained
+    
+    outs:
+    - artifacts/models/staging
+    - artifacts/models/production

@@ -1,0 +1,151 @@
+trigger:
+- master
+- devops-setup
+
+resources:
+- repo: self
+
+variables:
+  # - group: iot-training-variables
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: '53d5df7f-2a51-4fd4-85cb-0b14ab934258'
+  imageRepository: 'iotdeviceidentification'
+  containerRegistry: 'devopspublic.azurecr.io'
+  dockerfilePath: '**/Dockerfile'
+  tag: '$(Build.BuildId)'
+  imagePullSecret: 'regcred'
+  k8sNamespace: 'default'
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+stages:
+- stage: ContinousTraining
+  displayName: Continuous Training
+  jobs:
+  - job: LintWithFlake8
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.11'
+    - script: |
+        pip3 install flake8
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+  - job: Training
+    dependsOn: LintWithFlake8
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.11'
+    
+    - task: Bash@3
+      name: training
+      displayName: 'Model Training and Testing'
+      inputs:
+        filePath: '$(System.DefaultWorkingDirectory)/scripts/training.sh'
+        failOnStderr: false
+    - task: PublishPipelineArtifact@1
+      inputs:
+        artifactName: 'artifacts'
+        targetPath: '$(System.DefaultWorkingDirectory)/artifacts'
+        
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: BuildPush
+    displayName: Build and Push Image
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'specific'
+        project: 'IoT device Identification'
+        definition: '$(System.DefinitionId)'
+        buildVersionToDownload: 'specific'
+        pipelineId: '$(Build.BuildId)'
+        artifactName: 'artifacts'
+        targetPath: '$(System.DefaultWorkingDirectory)/artifacts'
+    - script: |
+        tree -d -p artifacts
+    - task: Bash@3
+      name: servingSetup
+      displayName: 'Build Setup for serving'
+      inputs:
+        filePath: '$(System.DefaultWorkingDirectory)/scripts/serving_setup.sh'
+        failOnStderr: false
+
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+          latest
+    - upload: manifests
+      artifact: manifests
+
+- stage: DeployDev
+  jobs:
+  - job: DeployDev
+    steps:
+    - task: DownloadSecureFile@1
+      name: sshKey
+      inputs:
+        secureFile: 'tsr-server-key.pem'
+    - script: |
+        sudo chmod 400 $(sshKey.secureFilePath)
+        ssh -o StrictHostKeyChecking=no -i $(sshKey.secureFilePath) ubuntu@3.145.183.208 "
+          docker ps -aq | xargs docker stop | xargs docker rm || true &&
+          docker run -d -e JWT_AUTH_SECRET_KEY=${JWT_AUTH_SECRET_KEY} -e JWT_AUTH_ALGORITHM=${JWT_AUTH_ALGORITHM} -e DB_HOST=${DB_HOST} -e DB_NAME=${DB_NAME} -e DB_USER=${DB_USER} -e DB_PASS=${DB_PASS} -p 80:8080 ${ACR_REGISTRY}/${ACR_IMG_REPO}:$(Build.BuildId)"
+          
+- stage: DeployUAT
+  jobs:
+  - job: DeployUAT
+    steps:
+    - task: DownloadSecureFile@1
+      name: sshKey
+      inputs:
+        secureFile: 'tsr-server-key.pem'
+    - script: |
+        sudo chmod 400 $(sshKey.secureFilePath)
+        ssh -o StrictHostKeyChecking=no -i $(sshKey.secureFilePath) ubuntu@3.144.108.130 "
+          docker ps -aq | xargs docker stop | xargs docker rm || true &&
+          docker run -d -e JWT_AUTH_SECRET_KEY=${JWT_AUTH_SECRET_KEY} -e JWT_AUTH_ALGORITHM=${JWT_AUTH_ALGORITHM} -e DB_HOST=${DB_HOST} -e DB_NAME=${DB_NAME} -e DB_USER=${DB_USER} -e DB_PASS=${DB_PASS} -p 80:8080 ${ACR_REGISTRY}/${ACR_IMG_REPO}:$(Build.BuildId)"
+
+- stage: DeployProdk8s        
+  jobs: 
+  - job: ApproveRelease
+    timeoutInMinutes: 4320 # job times out in 3 days
+    pool: server
+    steps:
+    - task: ManualValidation@0
+      timeoutInMinutes: 1440 # task times out in 1 day
+      inputs:
+        notifyUsers: 'hasanain@aicaliber.com'
+        instructions: 'Please validate and approve deployment to prod'
+  - job: DeployProd
+    steps:
+    - task: KubernetesManifest@1
+      inputs:
+        action: 'deploy'
+        connectionType: 'kubernetesServiceConnection'
+        kubernetesServiceConnection: 'kube-base-default-3484'
+        namespace: 'default'
+        strategy: 'canary'
+        percentage: '50'
+        manifests: |
+          $(System.DefaultWorkingDirectory)/manifests/secrets.yaml
+          $(System.DefaultWorkingDirectory)/manifests/deployment.yaml
+          $(System.DefaultWorkingDirectory)/manifests/service.yaml
+          $(System.DefaultWorkingDirectory)/manifests/ingress.yaml
+        containers: '$(containerRegistry)/$(imageRepository):$(tag)'
+        imagePullSecrets: '$(imagePullSecret)'
+        rolloutStatusTimeout: '100'

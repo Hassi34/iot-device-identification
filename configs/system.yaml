@@ -1,0 +1,47 @@
+
+data:
+  MONGO_DATABSE_NAME: "realtime"
+  MONGO_COLLECTION_NAME : "iot_devices"
+  MONGO_NUMBER_OF_ROWS_TO_INGEST : 100 
+  RAW_DATA_FILE_PATH:
+    - dataset/raw/IOT_devices.parquet.gzip
+  LAST_EXP_DATA_DIR: dataset/raw/last_experiment_data_version
+  PREPROCESSED_DATA_FILE_PATHS:
+    - dataset/preprocessed/X_train.npy.gz
+    - dataset/preprocessed/y_train.npy.gz
+    - dataset/preprocessed/X_test.npy.gz
+    - dataset/preprocessed/y_test.npy.gz
+    
+artifacts:
+  DATA_PREPROCESSING_PIPELINE_FILE_PATH : artifacts/pipelines/data_preprocessing_pipeline.pkl
+  STAGING_MODEL_DIR : artifacts/models/staging
+  PRODUCTION_MODEL_DIR : artifacts/models/production
+  TRAINED_MODEL_FILE_PATH : artifacts/models/staging/trained_model.pth
+  ONNX_TRAINED_MODEL_FILE_PATH : artifacts/models/trained/trained_model.onnx
+  ONNX_STAGED_MODEL_FILE_PATH : artifacts/models/staging/model.onnx
+  ONNX_PRODUCTION_MODEL_FILE_PATH : artifacts/models/staging/model.onnx
+  #LIGHTNING_MODEL_CKPT_FILE_PATH : artifacts/models/staging/lightning_model.ckpt
+  MODEL_LOSS_PLOT_FILE_PATH : artifacts/model_evaluation/loss_plot.png
+  MODEL_ACCURACY_PLOT_FILE_PATH : artifacts/model_evaluation/accuracy_plot.png
+  CONFUSION_MATRIX_PLOT_FILE_PATH: artifacts/model_evaluation/confusion_metrics.png
+  
+ckpt:
+  CKPT_DIR : ckpt
+  CKPT_FILE_PATH_FOR_TRAINING :  # Make sure the MAX_EPOCHS is greater than the epochs in the recent file name 
+logs:
+  RUNNING_LOGS_FILE_PATH : logs/running_logs.log
+  TENSORBOARD_LOGS_DIR : logs/tb_logs/
+
+mlflow:
+  EXPERIMENT_NAME: IOTExp2
+  RUN_ID_PREFIX: offline #change to online for deploying the code as pipeline
+  PYTORCH_MODEL_NAME : pt_model
+  PYTORCH_LOGGED_MODEL_DIR: pt_logged_model_dir
+  ONNX_MODEL_NAME : onnx_logged_model_02
+  ONNX_LOGGED_MODEL_DIR: onnx_logged_model_dir
+  ARTIFACT_DIR : Artifacts
+
+model_monitoring:
+  DATA_DRIFT_REPORT_PATH : artifacts/model_monitoring/data_drift_report.json
+  DRIFTED_COL_REPORT_PATH : artifacts/model_monitoring/drifted_col_report.json
+

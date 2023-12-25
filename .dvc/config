@@ -1,0 +1,5 @@
+[core]
+    remote = myremote
+['remote "myremote"']
+    url = s3://iot-devices-identification/iot-devices
+    version_aware = true

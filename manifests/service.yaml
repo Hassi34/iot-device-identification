@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: iotdeviceidentification
+  name: iotdeviceidentification
+spec:
+  type: ClusterIP
+  ports:
+  - name: "iotdeviceidentification-svc"
+    port: 5000 # this is the port that the actual service is listening on ( we will use this for ingress)
+    targetPort: 8080 # docker/pod in running on this
+    # nodePort: 31100 # range = (30000-32767) port for a node can  be used to access publicly but a public ip has to be assigned to a node first
+  selector:
+    app: iotdeviceidentification
