@@ -1,6 +1,6 @@
 <p align="center">
     <b>
-        <h1 align="center">IOT Device Identification</h1>
+        <h1 align="center">IoT Device Identification</h1>
     </b>
 </p>
 <p align="center">
